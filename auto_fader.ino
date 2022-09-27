@@ -5,9 +5,9 @@
 #define START_CHANNEL 1
 #define NUM_CHANNELS 192
 #define UNIVERSE_LENGTH 193
-#define RGB_AMOUNT 1
+#define RGB_AMOUNT 5
 #define RGB_SIZE 4
-#define WHITE_AMOUNT 0
+#define WHITE_AMOUNT 2
 #define USER_ADDRESS 177
 
 DmxInput dmx_input;
@@ -25,6 +25,10 @@ void loop()
     for (int j=rgb[i]; j<=RGB_SIZE; j++)
       output_buffer[j] = step(output_buffer[j], input_buffer[j], 1);
     output_buffer[rgb[i]+RGB_SIZE+1] = 0; // set strobe to off
+  }
+  for (int i=0; i<WHITE_AMOUNT; i++) {
+    output_buffer[white[i]] = step(output_buffer[white[i]], input_buffer[white[i]], 1);
+    output_buffer[white[i]+1] = 0; // set strobe to off
   }
   // Send out output_buffer on GPIO-pin 1
   dmx_output.write(output_buffer, NUM_CHANNELS);
@@ -49,18 +53,22 @@ void loop1()
   input_buffer[3] = 42;
   input_buffer[4] = 108;
   delay(8000);*/
+  /*input_buffer[1] = 255;
+  input_buffer[2] = 51;
+  input_buffer[3] = 179;
+  input_buffer[4] = 102;
+  delay(5000);
   input_buffer[1] = 255;
-  input_buffer[2] = 10;
-  input_buffer[3] = 48;
-  input_buffer[4] = 200;
-  delay(4000);
+  input_buffer[2] = 115;
+  input_buffer[3] = 75;
+  input_buffer[4] = 220;
+  delay(7000);
   input_buffer[1] = 255;
   input_buffer[2] = 0;
   input_buffer[3] = 0;
   input_buffer[4] = 0;
-  delay(4000);
+  delay(4000);*/
 
-  /*
   delay(30);
 
   if(millis() > 100+dmx_input.latest_packet_timestamp()) {
@@ -79,7 +87,7 @@ void loop1()
   // Blink the LED to indicate that a packet was received
   digitalWrite(LED_BUILTIN, HIGH);
   delay(10);
-  digitalWrite(LED_BUILTIN, LOW);*/
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 uint8_t step(uint8_t a, uint8_t b, uint8_t step_value)
@@ -104,6 +112,12 @@ void setup()
     output_buffer[i] = 0;
   }
   rgb[0] = 1;
+  rgb[1] = 17;
+  rgb[2] = 33;
+  rgb[3] = 49;
+  rgb[4] = 65;
+  white[0] = 81;
+  white[1] = 83;
 }
 
 void setup1()
