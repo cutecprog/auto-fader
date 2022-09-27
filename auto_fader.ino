@@ -2,67 +2,40 @@
 #include "DmxInput.h"
 #include <DmxOutput.h>
 
-DmxInput dmxInput;
-
 #define START_CHANNEL 1
-#define NUM_CHANNELS 4
+#define NUM_CHANNELS 192
+#define UNIVERSE_LENGTH 193
 
-volatile uint8_t buffer[DMXINPUT_BUFFER_SIZE(START_CHANNEL, NUM_CHANNELS)];
+DmxInput dmx_input;
+DmxOutput dmx_output;
 
-#define UNIVERSE_LENGTH 192
-
-// Declare an instance of the DMX Output
-DmxOutput dmx;
-
-// Create a universe that we want to send.
-// The universe must be maximum 512 bytes + 1 byte of start code
-uint8_t universe[UNIVERSE_LENGTH + 1];
-int8_t delta_red = 1;
-int8_t delta_green = -1;
-int8_t delta_blue = 1;
+volatile uint8_t input_buffer[DMXINPUT_BUFFER_SIZE(START_CHANNEL, NUM_CHANNELS)];
+uint8_t output_buffer[UNIVERSE_LENGTH];
 
 void setup()
 {
   Serial.begin(9600); 
   // Start the DMX Output on GPIO-pin 0
-  dmx.begin(0);
+  dmx_output.begin(0);
 
-  // Set all channels in the universe to the max allowed value (512)
-  for (int i = 1; i < UNIVERSE_LENGTH + 1; i++)
+  // Set all channels in the output_buffer to the max allowed value (512)
+  for (int i = 1; i < UNIVERSE_LENGTH; i++)
   {
-    universe[i] = 0;
+    output_buffer[i] = 0;
   }
-  universe[1] = 255;
-  universe[2] = 78;
-  universe[3] = 54;
-  universe[4] = 200;
+  output_buffer[1] = 255;
+  output_buffer[2] = 78;
+  output_buffer[3] = 54;
+  output_buffer[4] = 200;
     
 }
 
 void loop()
 {
-  
-  if (universe[2] == 255)
-    delta_red = -1;
-  else if (universe[2] == 1)
-    delta_red = 1;
-  universe[2] = universe[2] + delta_red;
-
-  if (universe[3] == 255)
-    delta_green = -1;
-  else if (universe[3] == 1)
-    delta_green = 1;
-  universe[3] = universe[3] + delta_green;
-
-  if (universe[4] == 255)
-    delta_blue = -1;
-  else if (universe[4] == 1)
-    delta_blue = 1;
-  universe[4] = universe[4] + delta_blue;
-  
-  // Send out universe on GPIO-pin 1
-   dmx.write(universe, UNIVERSE_LENGTH);
-  while (dmx.busy())
+    
+  // Send out output_buffer on GPIO-pin 1
+  dmx_output.write(output_buffer, NUM_CHANNELS);
+  while (dmx_output.busy())
   {
     /* Do nothing while the DMX frame transmits */
   }
@@ -75,8 +48,8 @@ void loop()
 void setup1()
 {
   // Setup our DMX Input to read on GPIO 5, from channel 1 to 3
-  dmxInput.begin(5, START_CHANNEL, NUM_CHANNELS);
-  dmxInput.read_async(buffer);
+  dmx_input.begin(5, START_CHANNEL, NUM_CHANNELS);
+  dmx_input.read_async(input_buffer);
 
   // Setup the onboard LED so that we can blink when we receives packets
   pinMode(LED_BUILTIN, OUTPUT);
@@ -86,15 +59,15 @@ void loop1()
 {
   delay(30);
 
-  if(millis() > 100+dmxInput.latest_packet_timestamp()) {
+  if(millis() > 100+dmx_input.latest_packet_timestamp()) {
     Serial.println("no data!");
     return;
   }
   // Print the DMX channels
   Serial.print("Received packet: ");
-  for (uint i = 0; i < sizeof(buffer); i++)
+  for (uint i = 0; i < sizeof(input_buffer); i++)
   {
-    Serial.print(buffer[i]);
+    Serial.print(input_buffer[i]);
     Serial.print(", ");
   }
   Serial.println("");
