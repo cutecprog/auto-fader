@@ -24,7 +24,7 @@ void loop()
   for (int i=0; i<RGB_AMOUNT; i++) {
     for (int j=rgb[i]; j<RGB_SIZE; j++)
       output_buffer[j] = step(output_buffer[j], input_buffer[j], 1);
-    output_buffer[rgb[i]+RGB_SIZE] = 0; // set strobe to off
+    output_buffer[rgb[i]+RGB_SIZE+1] = 0; // set strobe to off
   }
   // Send out output_buffer on GPIO-pin 1
   dmx_output.write(output_buffer, NUM_CHANNELS);
@@ -34,7 +34,7 @@ void loop()
   }
 
   // delay a millisecond for stability (Not strictly necessary)
-  //delay(1);
+  delay(1);
 }
 
 void loop1()
@@ -84,6 +84,9 @@ void setup()
   }
   output_buffer[1] = 255;
   output_buffer[2] = 255;
+  output_buffer[3] = 255;
+  output_buffer[4] = 255;
+  rgb[0] = 1;
 }
 
 void setup1()
