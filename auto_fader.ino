@@ -4,13 +4,15 @@
 #include <DmxOutput.pio.h>
 
 #include <Arduino.h>
-#include "DmxInput.h"
+#include <DmxInput.h>
 #include <DmxOutput.h>
 
 #define START_CHANNEL 1
 #define NUM_CHANNELS 196
 #define UNIVERSE_LENGTH 197
 #define USER_ADDRESS 177
+#define FADE_TIME 82
+#define MASTER 84
 
 DmxInput dmx_input;
 DmxOutput dmx_output;
@@ -34,22 +36,19 @@ void setup()
   for (int i = 0; i < UNIVERSE_LENGTH; i++) {
     input_buffer[i] = 0;
   }
-}
-
-void setup1()
-{
   Serial.begin(9600);   
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);  
 }
 
 void loop()
 {
   for (int i = 0; i < UNIVERSE_LENGTH; i++) {
     output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
-  }  
+  }
+  output_buffer[FADE_TIME] = 0;
+  output_buffer[MASTER] = 0;
   dmx_output.write(output_buffer, NUM_CHANNELS);
   while (dmx_output.busy());
-
   // delay a millisecond for stability (Not strictly necessary)
   delay(1);
 }
