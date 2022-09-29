@@ -19,15 +19,15 @@ DmxOutput dmx_output;
 
 volatile uint8_t input_buffer[DMXINPUT_BUFFER_SIZE(START_CHANNEL, NUM_CHANNELS)];
 uint8_t output_buffer[UNIVERSE_LENGTH];
+unsigned long frame_time;
 
-void setup()
-{
+void setup() {
   // Start the DMX Output on GPIO-pin 0
   dmx_output.begin(0);
   // Start the DMX Input on GPIO 5 (channel 1 to 192)
   dmx_input.begin(5, START_CHANNEL, NUM_CHANNELS);
   // Read continuously in the background
-  dmx_input.read_async(input_buffer);  
+  dmx_input.read_async(input_buffer);
   // Set all channels in the output_buffer to 0
   for (int i = 0; i < UNIVERSE_LENGTH; i++) {
     output_buffer[i] = 0;
@@ -36,35 +36,36 @@ void setup()
   for (int i = 0; i < UNIVERSE_LENGTH; i++) {
     input_buffer[i] = 0;
   }
-  Serial.begin(9600);   
-  pinMode(LED_BUILTIN, OUTPUT);  
+  Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
-void loop()
-{
+void loop() {
+  frame_time = millis();
   for (int i = 0; i < UNIVERSE_LENGTH; i++) {
     output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
   }
   output_buffer[FADE_TIME] = 0;
   output_buffer[MASTER] = 0;
   dmx_output.write(output_buffer, NUM_CHANNELS);
-  while (dmx_output.busy());
+  while (not_next_frame())
+    ;
+  while (dmx_output.busy())
+    Serial.println("Warning: Not given enough time to send data!");
   // delay a millisecond for stability (Not strictly necessary)
-  delay(1);
+  //delay(1);
 }
 
-void loop1()
-{  
+void loop1() {
   delay(30);
 
-  if(millis() > 100+dmx_input.latest_packet_timestamp()) {
+  if (millis() > 100 + dmx_input.latest_packet_timestamp()) {
     Serial.println("no data!");
     return;
   }
   // Print the DMX channels
   Serial.print("Received packet: ");
-  for (uint i = 0; i < sizeof(input_buffer); i++)
-  {
+  for (uint i = 0; i < sizeof(input_buffer); i++) {
     Serial.print(input_buffer[i]);
     Serial.print(", ");
   }
@@ -76,13 +77,24 @@ void loop1()
   digitalWrite(LED_BUILTIN, LOW);
 }
 
-uint8_t step(uint8_t a, uint8_t b, uint8_t step_value)
-{
-  if (a > (b+step_value))
+uint8_t step(uint8_t a, uint8_t b, uint8_t step_value) {
+  if (a > (b + step_value))
     a -= step_value;
-  else if (a < (b-step_value))
+  else if (a < (b - step_value))
     a += step_value;
   else
     a = b;
   return a;
+}
+
+// Return the next frame time in milliseconds vary based of fadetime slider
+bool not_next_frame() {
+  unsigned long offset = input_buffer[FADE_TIME];
+  if (offset >= 240)
+    return true;  // Hold current frame
+  if (offset < 16)
+    return false;  // Time for next frame
+  // values 1-224
+  offset -= 31;
+  return (millis() < (frame_time + offset));
 }
