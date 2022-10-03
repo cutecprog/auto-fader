@@ -49,17 +49,18 @@ void setup1() {
 }
 
 void loop() {
-  frame_start_ms = millis();  
-  for (int i = 0; i < UNIVERSE_LENGTH; i++) {
-    output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
+  if (millis() > (frame_start_ms + ms_til_next_frame())) {
+    frame_start_ms = millis();
+    for (int i = 0; i < UNIVERSE_LENGTH; i++) {
+      output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
+    }
+    output_buffer[FADE_TIME] = 0;
+    output_buffer[MASTER] = 0;    
   }
-  output_buffer[FADE_TIME] = 0;
-  output_buffer[MASTER] = 0;
+
   dmx_output.write(output_buffer, NUM_CHANNELS);
-  while (not_next_frame())
-    ;
   while (dmx_output.busy())
-    Serial.println("Bad Waiting");
+    ;
 }
 
 void loop1() {
@@ -71,13 +72,20 @@ void loop1() {
 
   // Print the DMX channels
   Serial.print("Packet (I,O): ");
-  for (uint i = 0; i < 16; i++) {
+  for (uint i = 1; i <= 16; i++) {
     Serial.print("(");
     Serial.print(input_buffer[i]);
     Serial.print(",");
     Serial.print(output_buffer[i]);
     Serial.print("), ");
   }
+  Serial.println("");
+  Serial.print(fadetime);
+  Serial.print(" ms, ");
+  Serial.print(frame_start_ms);
+  Serial.print(" ms, ");
+  Serial.print(input_buffer[FADE_TIME]);
+
   Serial.println("");
 
   // Blink the LED to indicate that a packet was received
@@ -95,12 +103,11 @@ uint8_t step(uint8_t a, uint8_t b, uint8_t step_value) {
 }
 
 // Return the next frame time in milliseconds vary based of fadetime slider
-bool not_next_frame() {
+bool ms_til_next_frame() {
   if (fadetime >= 240)
-    return true;  // Hold current frame
+    return 0;  // Hold current frame
   if (fadetime < 16)
-    return false;  // Time for next frame
+    return 0;  // Time for next frame
   // values 1-224
-  unsigned long frame_length_ms = fadetime - 31;
-  return (millis() < (frame_start_ms + frame_length_ms));
+  return fadetime - 31;
 }
