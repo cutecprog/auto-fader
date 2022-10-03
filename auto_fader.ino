@@ -61,7 +61,7 @@ void loop1() {
   dmx_input.read(input_buffer);
   if (input_buffer[FADE_TIME] != 0)
     fadetime = input_buffer[FADE_TIME];
-  if (input_buffer[MASTER] != 0)
+  if (input_buffer[MASTER] != 0 || master < 6)
     master = input_buffer[MASTER];
   digitalWrite(LED_BUILTIN, LOW);
 
@@ -75,9 +75,11 @@ void loop1() {
     Serial.print("), ");
   }
   Serial.println("");
+  if (fadetime < 16)
+  Serial.print(0);
+  else
   Serial.print(fadetime >> 1);
   Serial.print(" ms, ");
-  Serial.print(input_buffer[FADE_TIME]);
   Serial.print(apply_master_fader(100));
   Serial.print(" %");
 
@@ -118,7 +120,7 @@ void set_output() {
   else if ((millis() > (frame_start_ms + (fadetime >> 1) - 31))) {
     frame_start_ms = millis();
     for (int i = 0; i < UNIVERSE_LENGTH; i++) {
-      output_buffer[i] = apply_master_fader(step(output_buffer[i], input_buffer[i], 1));
+      output_buffer[i] = step(output_buffer[i], apply_master_fader(input_buffer[i]), 1);
     }
     output_buffer[FADE_TIME] = 0;
     output_buffer[MASTER] = 0;
