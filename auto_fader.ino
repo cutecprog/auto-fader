@@ -49,15 +49,7 @@ void setup1() {
 }
 
 void loop() {
-  if (stepping()) {
-    frame_start_ms = millis();
-    for (int i = 0; i < UNIVERSE_LENGTH; i++) {
-      output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
-    }
-    output_buffer[FADE_TIME] = 0;
-    output_buffer[MASTER] = 0;
-  }
-
+  set_output();
   dmx_output.write(output_buffer, NUM_CHANNELS);
   while (dmx_output.busy())
     ;
@@ -72,7 +64,7 @@ void loop1() {
 
   // Print the DMX channels
   Serial.print("Packet (I,O): ");
-  for (uint i = 1; i <= 16; i++) {
+  for (uint i = 5; i <= 8; i++) {
     Serial.print("(");
     Serial.print(input_buffer[i]);
     Serial.print(",");
@@ -80,7 +72,7 @@ void loop1() {
     Serial.print("), ");
   }
   Serial.println("");
-  Serial.print(fadetime);
+  Serial.print(fadetime>>2);
   Serial.print(" ms, ");
   Serial.print(frame_start_ms);
   Serial.print(" ms, ");
@@ -103,11 +95,26 @@ uint8_t step(uint8_t a, uint8_t b, uint8_t step_value) {
 }
 
 // Return the next frame time in milliseconds vary based of fadetime slider
-bool stepping() {
+void set_output() {
+  // Hold current frame
   if (fadetime >= 240)
-    return false;  // Hold current frame
-  if (fadetime < 16)
-    return false;  // Time for next frame
-  // values 1-224
-  return (millis() > (frame_start_ms + fadetime - 31));
+    return;
+  // Copy input_buffer into output buffer
+  if (fadetime < 16) {
+    for (int i = 0; i < UNIVERSE_LENGTH; i++) {
+      output_buffer[i] = input_buffer[i];
+    }
+    output_buffer[FADE_TIME] = 0;
+    output_buffer[MASTER] = 0;    
+    return;  // Time for next frame
+  }
+  // Step output buffer once per frame toward input buffer
+  if ((millis() > (frame_start_ms + (fadetime>>1) - 31))) {
+    frame_start_ms = millis();
+    for (int i = 0; i < UNIVERSE_LENGTH; i++) {
+      output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
+    }
+    output_buffer[FADE_TIME] = 0;
+    output_buffer[MASTER] = 0;
+  }
 }
