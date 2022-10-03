@@ -22,6 +22,7 @@ volatile uint8_t input_buffer[DMXINPUT_BUFFER_SIZE(START_CHANNEL, NUM_CHANNELS)]
 uint8_t output_buffer[UNIVERSE_LENGTH];
 unsigned long frame_start_ms;
 uint8_t fadetime;
+uint8_t master;
 
 void setup() {
   /*dmx_input.begin(5, START_CHANNEL, NUM_CHANNELS);
@@ -60,6 +61,8 @@ void loop1() {
   dmx_input.read(input_buffer);
   if (input_buffer[FADE_TIME] != 0)
     fadetime = input_buffer[FADE_TIME];
+  if (input_buffer[MASTER] != 0)
+    master = input_buffer[MASTER];
   digitalWrite(LED_BUILTIN, LOW);
 
   // Print the DMX channels
@@ -72,11 +75,11 @@ void loop1() {
     Serial.print("), ");
   }
   Serial.println("");
-  Serial.print(fadetime>>2);
-  Serial.print(" ms, ");
-  Serial.print(frame_start_ms);
+  Serial.print(fadetime >> 1);
   Serial.print(" ms, ");
   Serial.print(input_buffer[FADE_TIME]);
+  Serial.print(apply_master_fader(100));
+  Serial.print(" %");
 
   Serial.println("");
 
@@ -94,6 +97,10 @@ uint8_t step(uint8_t a, uint8_t b, uint8_t step_value) {
   return a;
 }
 
+uint8_t apply_master_fader(uint8_t a) {
+  return (a * (256 - master)) >> 8;
+}
+
 // Return the next frame time in milliseconds vary based of fadetime slider
 void set_output() {
   // Hold current frame
@@ -102,17 +109,16 @@ void set_output() {
   // Copy input_buffer into output buffer
   if (fadetime < 16) {
     for (int i = 0; i < UNIVERSE_LENGTH; i++) {
-      output_buffer[i] = input_buffer[i];
+      output_buffer[i] = apply_master_fader(input_buffer[i]);
     }
     output_buffer[FADE_TIME] = 0;
-    output_buffer[MASTER] = 0;    
-    return;  // Time for next frame
+    output_buffer[MASTER] = 0;
   }
   // Step output buffer once per frame toward input buffer
-  if ((millis() > (frame_start_ms + (fadetime>>1) - 31))) {
+  else if ((millis() > (frame_start_ms + (fadetime >> 1) - 31))) {
     frame_start_ms = millis();
     for (int i = 0; i < UNIVERSE_LENGTH; i++) {
-      output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
+      output_buffer[i] = apply_master_fader(step(output_buffer[i], input_buffer[i], 1));
     }
     output_buffer[FADE_TIME] = 0;
     output_buffer[MASTER] = 0;
