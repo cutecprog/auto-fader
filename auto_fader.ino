@@ -20,7 +20,7 @@ DmxOutput dmx_output;
 
 volatile uint8_t input_buffer[DMXINPUT_BUFFER_SIZE(START_CHANNEL, NUM_CHANNELS)];
 uint8_t output_buffer[UNIVERSE_LENGTH];
-unsigned long frame_time;
+unsigned long frame_start_ms;
 uint8_t fadetime;
 
 void setup() {
@@ -49,16 +49,14 @@ void setup1() {
 }
 
 void loop() {
+  frame_start_ms = millis();  
   for (int i = 0; i < UNIVERSE_LENGTH; i++) {
     output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
   }
-  if (input_buffer[FADE_TIME] != 0)
-    fadetime = input_buffer[FADE_TIME];
   output_buffer[FADE_TIME] = 0;
   output_buffer[MASTER] = 0;
-  frame_time = millis();
   dmx_output.write(output_buffer, NUM_CHANNELS);
-  while (frame_time + MIN_FRAME > millis())
+  while (not_next_frame())
     ;
   while (dmx_output.busy())
     Serial.println("Bad Waiting");
@@ -67,13 +65,18 @@ void loop() {
 void loop1() {
   // Wait for next DMX packet
   dmx_input.read(input_buffer);
+  if (input_buffer[FADE_TIME] != 0)
+    fadetime = input_buffer[FADE_TIME];
   digitalWrite(LED_BUILTIN, LOW);
 
   // Print the DMX channels
-  Serial.print("Sending packet: ");
-  for (uint i = 0; i < sizeof(output_buffer); i++) {
+  Serial.print("Packet (I,O): ");
+  for (uint i = 0; i < 16; i++) {
+    Serial.print("(");
+    Serial.print(input_buffer[i]);
+    Serial.print(",");
     Serial.print(output_buffer[i]);
-    Serial.print(", ");
+    Serial.print("), ");
   }
   Serial.println("");
 
@@ -93,12 +96,11 @@ uint8_t step(uint8_t a, uint8_t b, uint8_t step_value) {
 
 // Return the next frame time in milliseconds vary based of fadetime slider
 bool not_next_frame() {
-  unsigned long offset = fadetime;
-  if (offset >= 240)
+  if (fadetime >= 240)
     return true;  // Hold current frame
-  if (offset < 16)
+  if (fadetime < 16)
     return false;  // Time for next frame
   // values 1-224
-  offset -= 31;
-  return (millis() < (frame_time + offset));
+  unsigned long frame_length_ms = fadetime - 31;
+  return (millis() < (frame_start_ms + frame_length_ms));
 }
