@@ -49,13 +49,13 @@ void setup1() {
 }
 
 void loop() {
-  if (millis() > (frame_start_ms + ms_til_next_frame())) {
+  if (stepping()) {
     frame_start_ms = millis();
     for (int i = 0; i < UNIVERSE_LENGTH; i++) {
       output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
     }
     output_buffer[FADE_TIME] = 0;
-    output_buffer[MASTER] = 0;    
+    output_buffer[MASTER] = 0;
   }
 
   dmx_output.write(output_buffer, NUM_CHANNELS);
@@ -103,11 +103,11 @@ uint8_t step(uint8_t a, uint8_t b, uint8_t step_value) {
 }
 
 // Return the next frame time in milliseconds vary based of fadetime slider
-bool ms_til_next_frame() {
+bool stepping() {
   if (fadetime >= 240)
-    return 0;  // Hold current frame
+    return false;  // Hold current frame
   if (fadetime < 16)
-    return 0;  // Time for next frame
+    return false;  // Time for next frame
   // values 1-224
-  return fadetime - 31;
+  return (millis() > (frame_start_ms + fadetime - 31));
 }
