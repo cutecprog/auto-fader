@@ -80,8 +80,6 @@ void loop1() {
   else
   Serial.print(fadetime >> 1);
   Serial.print(" ms, ");
-  Serial.print(apply_master_fader(100));
-  Serial.print(" %");
 
   Serial.println("");
 
@@ -99,9 +97,9 @@ uint8_t step(uint8_t a, uint8_t b, uint8_t step_value) {
   return a;
 }
 
-uint8_t apply_master_fader(uint8_t a) {
+/*uint8_t apply_master_fader(uint8_t a) {
   return (a * (256 - master)) >> 8;
-}
+}*/
 
 // Return the next frame time in milliseconds vary based of fadetime slider
 void set_output() {
@@ -111,7 +109,7 @@ void set_output() {
   // Copy input_buffer into output buffer
   if (fadetime < 16) {
     for (int i = 0; i < UNIVERSE_LENGTH; i++) {
-      output_buffer[i] = apply_master_fader(input_buffer[i]);
+      output_buffer[i] = input_buffer[i];
     }
     output_buffer[FADE_TIME] = 0;
     output_buffer[MASTER] = 0;
@@ -120,7 +118,7 @@ void set_output() {
   else if ((millis() > (frame_start_ms + (fadetime >> 1) - 31))) {
     frame_start_ms = millis();
     for (int i = 0; i < UNIVERSE_LENGTH; i++) {
-      output_buffer[i] = step(output_buffer[i], apply_master_fader(input_buffer[i]), 1);
+      output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
     }
     output_buffer[FADE_TIME] = 0;
     output_buffer[MASTER] = 0;
