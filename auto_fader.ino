@@ -75,14 +75,16 @@ void loop1() {
     Serial.print("), ");
   }
   Serial.println("");
-  if (fadetime < 16)
-  Serial.print(0);
-  else
-  Serial.print(fadetime >> 1);
-  Serial.print(" ms, ");
-
+  if (fadetime < 16) {
+    Serial.print(0);
+    Serial.print(" ms");
+  } else if (fadetime > 240) {
+    Serial.print("Lock");
+  } else {
+    Serial.print(fadetime >> 1);
+    Serial.print(" ms");
+  }
   Serial.println("");
-
   // Blink the LED to indicate that a packet was received
   digitalWrite(LED_BUILTIN, HIGH);
 }
