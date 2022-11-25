@@ -4,8 +4,6 @@
 #include <DmxOutput.pio.h>
 
 #include <Arduino.h>
-#include <DmxInput.h>
-#include <DmxOutput.h>
 
 #define START_CHANNEL 1
 #define NUM_CHANNELS 192
@@ -22,7 +20,7 @@ volatile uint8_t input_buffer[DMXINPUT_BUFFER_SIZE(START_CHANNEL, NUM_CHANNELS)]
 uint8_t output_buffer[UNIVERSE_LENGTH];
 unsigned long frame_start_ms;
 uint8_t fadetime;
-uint8_t master;
+//uint8_t master;
 
 void setup() {
   /*dmx_input.begin(5, START_CHANNEL, NUM_CHANNELS);
@@ -61,8 +59,8 @@ void loop1() {
   dmx_input.read(input_buffer);
   if (input_buffer[FADE_TIME] != 0)
     fadetime = input_buffer[FADE_TIME];
-  if (input_buffer[MASTER] != 0 || master < 6)
-    master = input_buffer[MASTER];
+  /*if (input_buffer[MASTER] != 0 || master < 6)
+    master = input_buffer[MASTER];*/
   digitalWrite(LED_BUILTIN, LOW);
 
   // Print the DMX channels
