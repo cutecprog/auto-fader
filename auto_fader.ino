@@ -26,17 +26,6 @@ uint8_t white[WHITE_AMOUNT];
 
 void loop()
 {
-  //output_buffer[5] =255;
-  //output_buffer[6] =255;
-  /*for (int i=0; i<RGB_AMOUNT; i++) {
-    for (int j=rgb[i]; j<=RGB_SIZE; j++)
-      output_buffer[j] = step(output_buffer[j], input_buffer[j], 1);
-    output_buffer[rgb[i]+RGB_SIZE+1] = 0; // set strobe to off
-  }
-  for (int i=0; i<WHITE_AMOUNT; i++) {
-    output_buffer[white[i]] = step(output_buffer[white[i]], input_buffer[white[i]], 1);
-    output_buffer[white[i]+1] = 0; // set strobe to off
-  }*/
   for (int i = 0; i < UNIVERSE_LENGTH; i++) {
     output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
   }  
@@ -95,13 +84,6 @@ void setup()
   for (int i = 0; i < UNIVERSE_LENGTH; i++) {
     output_buffer[i] = 0;
   }
-  rgb[0] = 5;
-  /*rgb[1] = 21;
-  rgb[2] = 37;
-  rgb[3] = 53;
-  rgb[4] = 69;
-  white[0] = 81;
-  white[1] = 83;*/
 }
 
 void setup1()
