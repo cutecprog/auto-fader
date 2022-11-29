@@ -43,15 +43,22 @@ void setup() {
 void setup1() {
   Serial.begin(9600);
   pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
   // Setup our DMX Input to read on GPIO 0, from channel 1 to 3
   dmx_input.begin(5, START_CHANNEL, NUM_CHANNELS);
 }
 
 void loop() {
-  set_output();
+  //set_output();
+  for (int i = 0; i < UNIVERSE_LENGTH; i++) {
+   output_buffer[i] = step(output_buffer[i], input_buffer[i], 1);
+  }
+  output_buffer[FADE_TIME] = 0;
+  output_buffer[MASTER] = 0;  
   dmx_output.write(output_buffer, NUM_CHANNELS);
   while (dmx_output.busy())
     ;
+  delay(1);
 }
 
 void loop1() {
@@ -61,10 +68,10 @@ void loop1() {
     fadetime = input_buffer[FADE_TIME];
   /*if (input_buffer[MASTER] != 0 || master < 6)
     master = input_buffer[MASTER];*/
-  digitalWrite(LED_BUILTIN, LOW);
+  //digitalWrite(LED_BUILTIN, LOW);
 
   // Print the DMX channels
-  Serial.print("Packet (I,O): ");
+  /*Serial.print("Packet (I,O): ");
   for (uint i = 5; i <= 8; i++) {
     Serial.print("(");
     Serial.print(input_buffer[i]);
@@ -84,7 +91,7 @@ void loop1() {
   }
   Serial.println("");
   // Blink the LED to indicate that a packet was received
-  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(LED_BUILTIN, HIGH);*/
 }
 
 uint8_t step(uint8_t a, uint8_t b, uint8_t step_value) {
